@@ -1,38 +1,24 @@
-require('dotenv').config(); // Load environment variables
+// 1. MUST be the very first line of your file
+const dns = require('node:dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']); // Force Google DNS
+
+require('dotenv').config();
+// ... rest of your code
+require('dotenv').config(); 
+
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
-
 const app = express();
 
-// 1. Middleware
-app.use(cors());
-app.use(express.json());
+// 2. Use the variable from your .env file
+const DB_URI = process.env.MONGODB_URI;
+const PORT = process.env.PORT || 3000;
 
-// 2. MongoDB Connection
-// On Render, we will set MONGO_URI in the dashboard.
-// Locally, it will fall back to your compass string if the .env is missing.
-const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/smartKiosk";
+// 3. Connect to MongoDB using the variable
+mongoose.connect(DB_URI)
+  .then(() => console.log("✅ Successfully connected to SmartKiosk Database"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-mongoose.connect(mongoURI)
-    .then(() => console.log("✅ MongoDB Connected Successfully"))
-    .catch(err => console.error("❌ MongoDB Connection Error:", err));
-
-// 3. Health Check Route (Important for Render)
-app.get('/health', (req, res) => {
-    res.status(200).send('Server is healthy!');
-});
-
-// 4. Your API Routes (Example)
-app.get('/', (req, res) => {
-    res.send('SmartKiosk Backend is Running!');
-});
-
-// 5. Port Binding (The most important part for Render)
-// Render assigns a random port via process.env.PORT. 
-// We must use 0.0.0.0 to allow external connections.
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🔥 Server is live on port ${PORT}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
