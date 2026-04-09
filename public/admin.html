@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>🚀 Admin Panel - Orders</title>
+<style>
+body {
+  margin:0;
+  font-family:'Segoe UI';
+  background: linear-gradient(135deg,#1e1e2f,#2a2a40);
+  color:white;
+  padding:20px;
+}
+h1 { text-align:center; margin-bottom:20px; }
+table {
+  width:100%;
+  border-collapse: collapse;
+  margin-top:20px;
+}
+th, td {
+  padding:10px;
+  border:1px solid #555;
+}
+th { background:#444; }
+td { background: rgba(255,255,255,0.05); }
+button {
+  padding:5px 10px;
+  background:#ff4c4c;
+  color:white;
+  border:none;
+  border-radius:5px;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<h1>📋 Admin Panel - Orders</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Items</th>
+      <th>Total (₹)</th>
+      <th>Created At</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="ordersTable">
+    <!-- Orders will load here -->
+  </tbody>
+</table>
+
+<script>
+async function loadOrders() {
+  try {
+    const res = await fetch("http://localhost:5000/order");
+    const orders = await res.json();
+    const tbody = document.getElementById("ordersTable");
+    tbody.innerHTML = "";
+
+    orders.forEach(order => {
+      const row = document.createElement("tr");
+
+      // Items with quantities
+      const itemsCell = document.createElement("td");
+      let itemText = order.items.map(i => `${i.name} (${i.price})`).join(", ");
+      itemsCell.textContent = itemText;
+
+      // Total
+      const totalCell = document.createElement("td");
+      totalCell.textContent = order.total;
+
+      // Created At
+      const createdCell = document.createElement("td");
+      createdCell.textContent = new Date(order.createdAt).toLocaleString();
+
+      // Action (Delete)
+      const actionCell = document.createElement("td");
+      const delBtn = document.createElement("button");
+      delBtn.textContent = "Delete";
+      delBtn.onclick = async () => {
+        if(confirm("Are you sure to delete this order?")){
+          await fetch(`http://localhost:5000/order/${order._id}`, { method: "DELETE" });
+          loadOrders();
+        }
+      };
+      actionCell.appendChild(delBtn);
+
+      row.append(itemsCell, totalCell, createdCell, actionCell);
+      tbody.appendChild(row);
+    });
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to load orders");
+  }
+}
+
+// Auto-refresh every 5 seconds
+loadOrders();
+setInterval(loadOrders, 5000);
+</script>
+
+</body>
+</html>

@@ -1,60 +1,38 @@
-
-const express = require("express");
-const mongoose = require("mongoose");
-const cors = require("cors");
+require('dotenv').config(); // Load environment variables
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 
 const app = express();
 
-// ✅ Middleware
+// 1. Middleware
 app.use(cors());
 app.use(express.json());
 
-// ✅ MongoDB Connection
-mongoose.connect("mongodb://127.0.0.1:27017/smartkiosk")
-.then(() => console.log("✅ MongoDB Connected"))
-.catch(err => console.log("❌ DB Error:", err));
+// 2. MongoDB Connection
+// On Render, we will set MONGO_URI in the dashboard.
+// Locally, it will fall back to your compass string if the .env is missing.
+const mongoURI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/smartKiosk";
 
-// ✅ Schema
-const OrderSchema = new mongoose.Schema({
-  items: Array,
-  total: Number,
-  createdAt: { type: Date, default: Date.now }
+mongoose.connect(mongoURI)
+    .then(() => console.log("✅ MongoDB Connected Successfully"))
+    .catch(err => console.error("❌ MongoDB Connection Error:", err));
+
+// 3. Health Check Route (Important for Render)
+app.get('/health', (req, res) => {
+    res.status(200).send('Server is healthy!');
 });
 
-const Order = mongoose.model("Order", OrderSchema);
-
-// ✅ POST → Save Order
-app.post("/order", async (req, res) => {
-  try {
-    const newOrder = new Order(req.body);
-    await newOrder.save();
-    res.json({ message: "Order saved successfully" });
-  } catch (err) {
-    res.status(500).json({ error: "Error saving order" });
-  }
+// 4. Your API Routes (Example)
+app.get('/', (req, res) => {
+    res.send('SmartKiosk Backend is Running!');
 });
 
-// ✅ GET → View Orders
-app.get("/order", async (req, res) => {
-  try {
-    const orders = await Order.find();
-    res.json(orders);
-  } catch (err) {
-    res.status(500).json({ error: "Error fetching orders" });
-  }
-});
-// DELETE → Delete an order by ID
-app.delete("/order/:id", async (req, res) => {
-  try {
-    await Order.findByIdAndDelete(req.params.id);
-    res.json({ message: "Order deleted" });
-  } catch (err) {
-    res.status(500).json({ error: "Error deleting order" });
-  }
-});
+// 5. Port Binding (The most important part for Render)
+// Render assigns a random port via process.env.PORT. 
+// We must use 0.0.0.0 to allow external connections.
+const PORT = process.env.PORT || 5000;
 
-// ✅ Server Start
-app.listen(5000, () => {
-  console.log("🔥 Server running on port 5000");
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🔥 Server is live on port ${PORT}`);
 });
-
